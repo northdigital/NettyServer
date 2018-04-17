@@ -85,4 +85,13 @@ public class MyServer {
         });
     }
   }
+
+  public void send(String msg) {
+    if (socketChannel == null || !socketChannel.isOpen()) {
+      mainController.log("channel is not open!");
+    } else {
+      ByteBuf sendMsg = Unpooled.wrappedBuffer(msg.getBytes());
+      socketChannel.writeAndFlush(sendMsg);
+    }
+  }
 }

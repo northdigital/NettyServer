@@ -7,14 +7,12 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 
 public class MainController {
-  @FXML
-  public TextField txtPort;
-  @FXML
-  public Button btnStartServer;
-  @FXML
-  public Button btnStopServer;
-  @FXML
-  public TextArea txtMessages;
+  @FXML public TextField txtPort;
+  @FXML public Button btnStartServer;
+  @FXML public Button btnStopServer;
+  @FXML public TextArea txtMessages;
+  @FXML public Button btnSend;
+  @FXML public TextField txtSendMsg;
 
   public MainController() {
   }
@@ -42,5 +40,11 @@ public class MainController {
   @FXML
   public void btnStopServerClick(ActionEvent actionEvent) throws Exception {
     myServer.stop();
+  }
+
+  @FXML
+  public void btnSendClick(ActionEvent actionEvent) {
+    String msg = txtSendMsg.getText();
+    myServer.send(msg + "\r\n");
   }
 }

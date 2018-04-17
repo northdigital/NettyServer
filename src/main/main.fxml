@@ -5,10 +5,11 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 
-<GridPane alignment="center" hgap="10" prefHeight="200.0" prefWidth="224.0" vgap="10" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="main.MainController">
+<GridPane alignment="center" hgap="10" prefHeight="339.0" prefWidth="378.0" vgap="10" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="main.MainController">
    <columnConstraints>
       <ColumnConstraints />
    </columnConstraints>
@@ -16,12 +17,18 @@
       <RowConstraints />
    </rowConstraints>
    <children>
-      <VBox prefHeight="200.0" prefWidth="243.0">
+      <VBox prefHeight="409.0" prefWidth="378.0">
          <children>
             <TextField fx:id="txtPort" promptText="port" text="7777" />
-            <Button fx:id="btnStartServer" mnemonicParsing="false" onAction="#btnStartServerClick" prefHeight="25.0" prefWidth="111.0" text="Start Server" />
-            <Button fx:id="btnStopServer" mnemonicParsing="false" onAction="#btnStopServerClick" prefHeight="25.0" prefWidth="111.0" text="Stop Server" />
+            <Button fx:id="btnStartServer" mnemonicParsing="false" onAction="#btnStartServerClick" prefHeight="25.0" prefWidth="395.0" text="Start Server" />
+            <Button fx:id="btnStopServer" mnemonicParsing="false" onAction="#btnStopServerClick" prefHeight="25.0" prefWidth="407.0" text="Stop Server" />
             <TextArea fx:id="txtMessages" prefHeight="156.0" prefWidth="224.0" />
+            <HBox prefHeight="100.0" prefWidth="200.0">
+               <children>
+                  <Button fx:id="btnSend" maxWidth="-Infinity" minWidth="100.0" mnemonicParsing="false" onAction="#btnSendClick" prefHeight="25.0" prefWidth="88.0" text="Send" />
+                  <TextField fx:id="txtSendMsg" prefHeight="25.0" prefWidth="334.0" />
+               </children>
+            </HBox>
          </children>
       </VBox>
    </children>
