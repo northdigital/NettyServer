@@ -51,7 +51,12 @@ public class MyServer {
       });
 
     channelFuture = serverBootstrap.bind();
-    channelFuture.addListener(channelFuture -> mainController.log("server is listening on port " + port));
+    channelFuture.addListener(channelFuture -> {
+      Platform.runLater(() -> {
+        MyServer.this.mainController.log("server is listening on port " + port);
+        MyServer.this.mainController.txtPort.setEditable(false);
+      });
+    });
   }
 
   public void stop() {
@@ -65,9 +70,10 @@ public class MyServer {
         .addListener(ChannelFutureListener.CLOSE)
         .addListener(channelFuture -> {
           MyServer.this.socketChannel = null;
-          //Logger.log("disconnected");
-
-          Platform.runLater(() -> mainController.log("disconnected"));
+          Platform.runLater(() -> {
+            MyServer.this.mainController.log("disconnected");
+            MyServer.this.mainController.txtPort.setEditable(true);
+          });
         });
     }
 
@@ -79,9 +85,7 @@ public class MyServer {
         .close()
         .addListener(channelFuture -> {
           MyServer.this.channelFuture = null;
-          //Logger.log("listener stopped");
-
-          Platform.runLater(() -> mainController.log("listener stopped"));
+          Platform.runLater(() -> MyServer.this.mainController.log("listener stopped"));
         });
     }
   }
