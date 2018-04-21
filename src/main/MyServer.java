@@ -4,7 +4,6 @@ import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -13,16 +12,19 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import javafx.application.Platform;
 
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.List;
 
-public class MyServer {
+class MyServer {
   private MainController mainController;
   private ChannelFuture channelFuture;
-  private SocketChannel socketChannel;
 
-  EventLoopGroup nioEventLoopGroup;
+  private EventLoopGroup nioEventLoopGroup;
+  private List<SocketChannel> socketChannels;
 
   public MyServer(MainController mainController) {
     this.mainController = mainController;
+    socketChannels = new ArrayList<>();
   }
 
   public void start() throws Exception {
@@ -45,7 +47,7 @@ public class MyServer {
       .childHandler(new ChannelInitializer<SocketChannel>() {
         @Override
         protected void initChannel(SocketChannel socketChannel) throws Exception {
-          MyServer.this.socketChannel = socketChannel;
+          MyServer.this.socketChannels.add(socketChannel);
           socketChannel.pipeline().addLast(myServerHandler);
           mainController.log("connected->" + socketChannel.remoteAddress().getAddress() + ":" +
             socketChannel.remoteAddress().getPort());
@@ -61,9 +63,11 @@ public class MyServer {
     });
   }
 
-  public void stop() throws InterruptedException {
-    ByteBuf closeMsg = Unpooled.wrappedBuffer("closed".getBytes());
-    socketChannel.writeAndFlush(closeMsg);
+  public void stop() {
+    for (SocketChannel socketChannel : socketChannels ) {
+      ByteBuf closeMsg = Unpooled.wrappedBuffer("closed".getBytes());
+      socketChannel.writeAndFlush(closeMsg);
+    }
 
     nioEventLoopGroup
       .shutdownGracefully()
@@ -76,11 +80,11 @@ public class MyServer {
   }
 
   public void send(String msg) {
-    if (socketChannel == null || !socketChannel.isOpen()) {
-      mainController.log("channel is not open!");
-    } else {
-      ByteBuf sendMsg = Unpooled.wrappedBuffer(msg.getBytes());
-      socketChannel.writeAndFlush(sendMsg);
+    for (SocketChannel socketChannel : socketChannels) {
+      if (socketChannel.isOpen()) {
+        ByteBuf sendMsg = Unpooled.wrappedBuffer(msg.getBytes());
+        socketChannel.writeAndFlush(sendMsg);
+      }
     }
   }
 }
