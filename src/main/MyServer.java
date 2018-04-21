@@ -3,9 +3,7 @@ package main;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.EventLoopGroup;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
@@ -17,7 +15,7 @@ import java.util.List;
 
 class MyServer {
   private MainController mainController;
-  private ChannelFuture channelFuture;
+  private Channel listenerChannel;
 
   private EventLoopGroup nioEventLoopGroup;
   private List<SocketChannel> socketChannels;
@@ -30,8 +28,8 @@ class MyServer {
   public void start() throws Exception {
     int port = mainController.getPort();
 
-    if (channelFuture != null && channelFuture.channel().isOpen()) {
-      mainController.log("already listening on " + channelFuture.channel().localAddress().toString());
+    if (listenerChannel != null && listenerChannel.isOpen()) {
+      mainController.log("already listening on " + listenerChannel.localAddress().toString());
       return;
     }
 
@@ -49,34 +47,41 @@ class MyServer {
         protected void initChannel(SocketChannel socketChannel) throws Exception {
           MyServer.this.socketChannels.add(socketChannel);
           socketChannel.pipeline().addLast(myServerHandler);
+
+          socketChannel.closeFuture().addListener(channelFeature ->
+            Platform.runLater(() -> {
+              socketChannels.remove(socketChannel);
+              MyServer.this.mainController.log("channel closed ");
+            }));
+
           mainController.log("connected->" + socketChannel.remoteAddress().getAddress() + ":" +
             socketChannel.remoteAddress().getPort());
         }
       });
 
-    channelFuture = serverBootstrap.bind();
-    channelFuture.addListener(channelFuture -> {
-      Platform.runLater(() -> {
-        MyServer.this.mainController.log("server is listening on port " + port);
-        MyServer.this.mainController.txtPort.setEditable(false);
-      });
-    });
+    ChannelFuture channelFuture = serverBootstrap.bind();
+    listenerChannel = channelFuture.channel();
+
+    channelFuture.addListener(genericFeature -> Platform.runLater(() -> {
+      MyServer.this.mainController.log("server is listening on port " + port);
+      MyServer.this.mainController.txtPort.setEditable(false);
+    }));
   }
 
   public void stop() {
-    for (SocketChannel socketChannel : socketChannels ) {
-      ByteBuf closeMsg = Unpooled.wrappedBuffer("closed".getBytes());
-      socketChannel.writeAndFlush(closeMsg);
+    for (SocketChannel socketChannel : socketChannels) {
+      if(socketChannel.isOpen()) {
+        ByteBuf closeMsg = Unpooled.wrappedBuffer("closed".getBytes());
+        socketChannel.writeAndFlush(closeMsg);
+      }
     }
 
     nioEventLoopGroup
       .shutdownGracefully()
-      .addListener(channelFuture -> {
-        Platform.runLater(() -> {
-            MyServer.this.mainController.log("server shutdown");
-            MyServer.this.mainController.txtPort.setEditable(true);
-          });
-      });
+      .addListener(channelFuture -> Platform.runLater(() -> {
+        MyServer.this.mainController.log("server shutdown");
+        MyServer.this.mainController.txtPort.setEditable(true);
+      }));
   }
 
   public void send(String msg) {
