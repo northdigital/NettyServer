@@ -19,6 +19,8 @@ public class MyServer {
   private ChannelFuture channelFuture;
   private SocketChannel socketChannel;
 
+  EventLoopGroup nioEventLoopGroup;
+
   public MyServer(MainController mainController) {
     this.mainController = mainController;
   }
@@ -33,7 +35,7 @@ public class MyServer {
 
     final MyServerHandler myServerHandler = new MyServerHandler(mainController);
 
-    EventLoopGroup nioEventLoopGroup = new NioEventLoopGroup();
+    nioEventLoopGroup = new NioEventLoopGroup();
 
     ServerBootstrap serverBootstrap = new ServerBootstrap();
     serverBootstrap
@@ -59,35 +61,18 @@ public class MyServer {
     });
   }
 
-  public void stop() {
-    if (socketChannel == null || !socketChannel.isOpen()) {
-      mainController.log("channel is not open!");
-    } else {
-      ByteBuf closeMsg = Unpooled.wrappedBuffer("closed".getBytes());
+  public void stop() throws InterruptedException {
+    ByteBuf closeMsg = Unpooled.wrappedBuffer("closed".getBytes());
+    socketChannel.writeAndFlush(closeMsg);
 
-      socketChannel
-        .writeAndFlush(closeMsg)
-        .addListener(ChannelFutureListener.CLOSE)
-        .addListener(channelFuture -> {
-          MyServer.this.socketChannel = null;
-          Platform.runLater(() -> {
-            MyServer.this.mainController.log("disconnected");
+    nioEventLoopGroup
+      .shutdownGracefully()
+      .addListener(channelFuture -> {
+        Platform.runLater(() -> {
+            MyServer.this.mainController.log("server shutdown");
             MyServer.this.mainController.txtPort.setEditable(true);
           });
-        });
-    }
-
-    if (channelFuture == null || !channelFuture.channel().isOpen()) {
-      mainController.log("listener is not listening!");
-    } else {
-      channelFuture
-        .channel()
-        .close()
-        .addListener(channelFuture -> {
-          MyServer.this.channelFuture = null;
-          Platform.runLater(() -> MyServer.this.mainController.log("listener stopped"));
-        });
-    }
+      });
   }
 
   public void send(String msg) {
