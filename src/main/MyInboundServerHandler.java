@@ -55,9 +55,9 @@ public class MyInboundServerHandler extends ChannelInboundHandlerAdapter {
 
       if (startRead && endRead) {
         mainController.log("MyInboundServerHandler -> Received -> " + messageBuffer);
-        messageBuffer = EMPTY_BUFFER;
         startRead = false;
         endRead = false;
+        messageBuffer = EMPTY_BUFFER;
       }
     }
   }
