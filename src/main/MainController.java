@@ -1,5 +1,6 @@
 package main;
 
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -17,9 +18,8 @@ public class MainController {
   public MainController() {
   }
 
-  public MainController log(String msg) {
-    txtMessages.appendText(msg + "\n");
-    return this;
+  public void log(String msg) {
+    Platform.runLater(() -> txtMessages.appendText(msg + "\r\n"));
   }
 
   public int getPort() throws Exception {

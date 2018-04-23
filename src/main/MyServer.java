@@ -3,11 +3,13 @@ package main;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import javafx.application.Platform;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -29,11 +31,11 @@ class MyServer {
     int port = mainController.getPort();
 
     if (listenerChannel != null && listenerChannel.isOpen()) {
-      mainController.log("already listening on " + listenerChannel.localAddress().toString());
+      mainController.log("MyServer -> already listening on " + listenerChannel.localAddress().toString());
       return;
     }
 
-    final MyServerHandler myServerHandler = new MyServerHandler(mainController);
+    final MyInboundServerHandler myServerHandler = new MyInboundServerHandler(mainController);
 
     nioEventLoopGroup = new NioEventLoopGroup();
 
@@ -48,13 +50,13 @@ class MyServer {
           MyServer.this.socketChannels.add(socketChannel);
           socketChannel.pipeline().addLast(myServerHandler);
 
-          socketChannel.closeFuture().addListener(channelFeature ->
-            Platform.runLater(() -> {
-              socketChannels.remove(socketChannel);
-              MyServer.this.mainController.log("channel closed ");
-            }));
+          socketChannel.closeFuture().addListener(channelFeature -> {
+            MyServer.this.mainController.log("MyServer -> channel closed -> " + socketChannel.remoteAddress().getAddress() + ":" +
+              socketChannel.remoteAddress().getPort());
+            socketChannels.remove(socketChannel);
+          });
 
-          mainController.log("connected->" + socketChannel.remoteAddress().getAddress() + ":" +
+          mainController.log("MyServer -> connected->" + socketChannel.remoteAddress().getAddress() + ":" +
             socketChannel.remoteAddress().getPort());
         }
       });
@@ -62,26 +64,26 @@ class MyServer {
     ChannelFuture channelFuture = serverBootstrap.bind();
     listenerChannel = channelFuture.channel();
 
-    channelFuture.addListener(genericFeature -> Platform.runLater(() -> {
-      MyServer.this.mainController.log("server is listening on port " + port);
+    channelFuture.addListener(genericFeature -> {
+      MyServer.this.mainController.log("MyServer -> server is listening on port: " + port);
       MyServer.this.mainController.txtPort.setEditable(false);
-    }));
+    });
   }
 
   public void stop() {
     for (SocketChannel socketChannel : socketChannels) {
-      if(socketChannel.isOpen()) {
-        ByteBuf closeMsg = Unpooled.wrappedBuffer("closed".getBytes());
+      if (socketChannel.isOpen()) {
+        ByteBuf closeMsg = Unpooled.wrappedBuffer("MyServer -> closed".getBytes());
         socketChannel.writeAndFlush(closeMsg);
       }
     }
 
     nioEventLoopGroup
       .shutdownGracefully()
-      .addListener(channelFuture -> Platform.runLater(() -> {
-        MyServer.this.mainController.log("server shutdown");
+      .addListener(channelFuture -> {
+        MyServer.this.mainController.log("MyServer -> server shutdown");
         MyServer.this.mainController.txtPort.setEditable(true);
-      }));
+      });
   }
 
   public void send(String msg) {
