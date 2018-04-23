@@ -8,7 +8,13 @@ import io.netty.util.CharsetUtil;
 
 @Sharable
 public class MyInboundServerHandler extends ChannelInboundHandlerAdapter {
+  private static final char CTRL_START = 0x02;
+  private static final char CTRL_END = 0x03;
+  private static final String EMPTY_BUFFER = "";
+
   private MainController mainController;
+  private Boolean startRead = false, endRead = false;
+  private String messageBuffer = EMPTY_BUFFER;
 
   public MyInboundServerHandler(MainController mainController) {
     this.mainController = mainController;
@@ -27,7 +33,33 @@ public class MyInboundServerHandler extends ChannelInboundHandlerAdapter {
   @Override
   public void channelRead(ChannelHandlerContext ctx, Object msg) {
     ByteBuf in = (ByteBuf) msg;
-    mainController.log("MyInboundServerHandler -> Received -> " + in.toString(CharsetUtil.UTF_8));
+    String msgStr = in.toString(CharsetUtil.UTF_8);
+
+    for (char ch : msgStr.toCharArray()) {
+      boolean ctrlStartRead = ch == CTRL_START;
+      boolean ctrlEndRead = ch == CTRL_END;
+
+      if (ctrlStartRead) {
+        startRead = true;
+        endRead = false;
+        messageBuffer = EMPTY_BUFFER;
+      }
+
+      if (ctrlEndRead) {
+        endRead = true;
+      }
+
+      if (!ctrlStartRead && !ctrlEndRead && startRead) {
+        messageBuffer += ch;
+      }
+
+      if (startRead && endRead) {
+        mainController.log("MyInboundServerHandler -> Received -> " + messageBuffer);
+        messageBuffer = EMPTY_BUFFER;
+        startRead = false;
+        endRead = false;
+      }
+    }
   }
 
   @Override
