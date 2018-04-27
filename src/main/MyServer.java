@@ -35,8 +35,6 @@ class MyServer {
       return;
     }
 
-    final MyInboundServerHandler myServerHandler = new MyInboundServerHandler(mainController);
-
     nioEventLoopGroup = new NioEventLoopGroup();
 
     ServerBootstrap serverBootstrap = new ServerBootstrap();
@@ -48,7 +46,7 @@ class MyServer {
         @Override
         protected void initChannel(SocketChannel socketChannel) throws Exception {
           MyServer.this.socketChannels.add(socketChannel);
-          socketChannel.pipeline().addLast(myServerHandler);
+          socketChannel.pipeline().addLast(new MyInboundServerHandler(mainController));
 
           socketChannel.closeFuture().addListener(channelFeature -> {
             MyServer.this.mainController.log("MyServer -> channel closed -> " + socketChannel.remoteAddress().getAddress() + ":" +

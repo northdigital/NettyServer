@@ -6,7 +6,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.util.CharsetUtil;
 
-@Sharable
 public class MyInboundServerHandler extends ChannelInboundHandlerAdapter {
   private static final char CTRL_START = 0x02;
   private static final char CTRL_END = 0x03;
